@@ -2,7 +2,7 @@ const { parse } = require('csv-parse');
 const fs = require('fs');
 const path = require('path');
 
-const habitablePlanets = [];
+const planets = require('./planets.mongo');
 
 function isHabitable(planet) {
     return planet['koi_disposition'] === 'CONFIRMED'
@@ -33,21 +33,22 @@ function loadPlanetsData() {
                 columns: true,
             })) //connecting the two strams together (readable stream source
             //to writable stream destination)
-            .on('data', (data) => {
+            .on('data', async (data) => {
                 if (isHabitable(data)) {
-                    habitablePlanets.push(data);
+                    savePlanet(data);
                 }
             })
             .on('error', (err) => {
                 console.log(err);
                 reject(err);
             })
-            .on('end', () => {
+            .on('end', async () => {
                 /*
                 console.log(habitablePlanets.map((planet) => {
                     return planet['kepler_name'];
                 })) */
-                console.log(habitablePlanets.length);
+                const countPlanetsFound = (await getAllPlanets()).length;
+                console.log(`Found ${countPlanetsFound} habitable planets.`);
                 resolve(); //we're not passing anything as a result into the resolve function
                 //because we're setting the habitableplanets array
 
@@ -76,8 +77,38 @@ file system module (fs) */
 //if the request comes in from the frontend, the data might not have been loaded yet
 // => we light get an empty list of planets => we create a js promise for the loading code
 //and we wait for the promise to resolve before accepting any incoming requests
-function getAllPlanets() {
+
+/*function getAllPlanets() {
     return habitablePlanets;
+}
+*/
+
+async function getAllPlanets() {
+    return await planets.find({}, {
+        '_id': 0, '__v':0,
+    });
+}
+
+async function savePlanet(planet) {
+    try {
+        //we use upsert: insert + update: so that the function loadPlanetsData doesnt
+    //upload the same data many times instead of create
+    await planets.updateOne(
+        {
+          keplerName: planet.kepler_name,
+        },
+        {
+          keplerName: planet.kepler_name,
+        },
+        {
+          upsert: true,
+        }
+      );
+    } catch (err) {
+        console.log(`Could not save planet ${err}`);
+    }
+
+    
 }
 
 module.exports = {
