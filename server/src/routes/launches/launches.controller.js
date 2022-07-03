@@ -4,9 +4,15 @@ const { getAllLaunches,
     abortLaunchById,
 } = require('../../models/launches.model');
 
+const {
+    getPagination,
+} = require('../../services/query');
+
 async function httpGetAllLaunches(req, res) {//returns a response
     //return res.status(200).json(Array.from(launches.values()));
-    return res.status(200).json(await getAllLaunches());
+    const { skip, limit } = getPagination(req.query);
+    const launches = await getAllLaunches(skip, limit);
+    return res.status(200).json(launches);
     //controller shouldn't care where the data came from or the format
 }
 
