@@ -6,13 +6,19 @@ on:
     branches: [ master ]
 jobs: 
   build: 
+    env: #list of variables that are set and available in all of the actions that are set and available in the steps
+      CI: true #th create react app test script will know tthat we're running a CI env and will disable watch mode
+    strategy:
+      matrix: 
+        node-version: [14.x, 16.x] #creates two buuld jobs that run in // which each runs through the steps in the workflow
     runs-on: ubuntu-latest
     steps: #reusable scripts used to automate the job
       - uses: actions/checkout@v2 #checkout the latest version of the code from master
       #checkout is built into github actions 
-      - name: Use Node.js version 16
+      - name: Use Node.js version ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with: 
-          node-version: '16'
+          node-version: ${{ matrix.node-version }} 
       - run: npm install 
       - run: npm run build --prefix client
+      - run: npm test 
