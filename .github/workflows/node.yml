@@ -8,9 +8,11 @@ jobs:
   build: 
     env: #list of variables that are set and available in all of the actions that are set and available in the steps
       CI: true #th create react app test script will know tthat we're running a CI env and will disable watch mode
+      MONGO_URL: mongodb://localhost/nasa
     strategy:
       matrix: 
         node-version: [14.x, 16.x] #creates two buuld jobs that run in // which each runs through the steps in the workflow
+        mongodb-version: ['4.4']
     runs-on: ubuntu-latest
     steps: #reusable scripts used to automate the job
       - uses: actions/checkout@v2 #checkout the latest version of the code from master
@@ -19,6 +21,10 @@ jobs:
         uses: actions/setup-node@v2
         with: 
           node-version: ${{ matrix.node-version }} 
+      - name: Use MongoDB from GitHub actions
+        uses: supercharge/mongodb-github-action@1.7.0 #starts a mongodb server specifically for the current job, and the db is available on localhost inside of the CI server
+        with: 
+          mongodb-version: ${{ matrix.mongodb-version }}
       - run: npm install 
       - run: npm run build --prefix client
       - run: npm test 
